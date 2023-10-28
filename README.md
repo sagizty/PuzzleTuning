@@ -4,6 +4,7 @@ Pathology image analysis is a crucial field in computer vision. Due to the annot
 
 ## Comparison
 <img width="794" alt="image" src="https://github.com/sagizty/PuzzleTuning/assets/50575108/b4b9bf27-afd0-49ab-a910-60bb0d0b3c7b">
+<img width="193" alt="image" src="https://github.com/sagizty/PuzzleTuning/assets/50575108/0dc41248-b556-4a66-bdfa-5f6d49b60877">
 
 ## Domain bridging target
 <img width="589" alt="image" src="https://github.com/sagizty/PuzzleTuning/assets/50575108/1a81bfa9-525b-4b90-8abe-f1bed9affa48">
