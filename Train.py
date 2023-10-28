@@ -425,7 +425,6 @@ def main(args):
         import matplotlib
         matplotlib.use('Agg')
 
-    enable_notify = args.enable_notify  # True
     enable_tensorboard = args.enable_tensorboard  # True
     enable_attention_check = args.enable_attention_check  # False   'CAM' 'SAA'
     enable_visualize_check = args.enable_visualize_check  # False
