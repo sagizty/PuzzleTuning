@@ -230,7 +230,6 @@ def main(args):
 
     gpu_idx = args.gpu_idx  # GPU idx start with0, -1 to use multiple GPU
 
-    enable_notify = args.enable_notify  # False
     enable_tensorboard = args.enable_tensorboard  # False
 
     enable_attention_check = args.enable_attention_check  # False
