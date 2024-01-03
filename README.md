@@ -6,6 +6,18 @@ Pathology image analysis is a crucial field in computer vision. Due to the annot
 ![Screenshot 2023-10-30 at 11 49 43 AM](https://github.com/sagizty/PuzzleTuning/assets/50575108/ca2ecbc6-fcb9-408c-88ec-18ec77ad99f8)
 Overview of PuzzleTuning. Three steps are designed: In step 1 of the puzzle making process, each input batch of images is split into bags of patches sharing the same size for each patch. Then, the position and relation tokens are randomly assigned to the same position across the batch. The relation tokens are independently shuffled among the bags. While the position tokens, which serve as the fixed patches, all stayed in the original locations. The operation augments grouping and semantic relationship within the different groups of tokens, while the relationship within each bag remains unchanged. In step 2 of the puzzle understanding process: The bags are then sent into the backbone encoder to model the grouping, junction and the additional misalignment relationships. After that, the position tokens are replaced with the original input position tokens to achieve the positional hint for the low-level decoder model. During the prompt tuning process, the pathological focuses are explicitly encoded with the backbone’s general vision knowledge. In step 3 of the puzzle restoring process: The decoder model reconstructs the relation tokens and hint. With SSL supervision, the model restores puzzles of the original images.
 
+# Usage
+## weights
+we have updated the pre-trained weight of PuzzleTuning and all counterparts at
+
+https://drive.google.com/file/d/1-mddejIdCRP5AscnlWAyEcGzfgBIRCSf/view?usp=share_link
+
+## demo
+we have updated a demo for iullustration at 
+
+https://github.com/sagizty/PuzzleTuning/blob/main/PuzzleTuning%20Colab%20Demo.ipynb
+
+# Results
 ## Comparison
 <img width="794" alt="image" src="https://github.com/sagizty/PuzzleTuning/assets/50575108/b4b9bf27-afd0-49ab-a910-60bb0d0b3c7b">
 <img width="193" alt="image" src="https://github.com/sagizty/PuzzleTuning/assets/50575108/0dc41248-b556-4a66-bdfa-5f6d49b60877">
