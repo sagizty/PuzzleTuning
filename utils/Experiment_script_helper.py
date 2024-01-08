@@ -1,5 +1,5 @@
 """
-Experimental Script Generator    Script  ver： Oct 10th 15:00
+Experimental Script Generator    Script  ver： Oct 5th 16:30
 
 for linux servers
 
@@ -525,6 +525,220 @@ def write_CLS_AUG_script(model_idx, augmentation_names, data_augmentation_mode, 
                   + dataroot + ' --model_path ' + model_path + ' --draw_root ' + draw_root)
             print('')
 
+
+def write_MIL_script(model_idxs, data_augmentation_mode, edge_size, batch_size, patch_size, lr, lrf, enable_tensorboard,
+                     test_enable_attention_check, dataset_name, dataroot, model_path, draw_root, imaging_root=None):
+    # imaging_root 是放画图的检查的路径，可以和draw一样
+    if imaging_root == None:
+        imaging_root = draw_root
+
+    data_augmentation_mode = str(data_augmentation_mode)
+    edge_size = str(edge_size)
+    batch_size = str(batch_size)
+    patch_size = str(patch_size)
+    lr_name = zero_trans_floatlr_to_mystrlr(lr)
+    lr = str(lr)
+    lf_name = str(int(100 * lrf))
+    lrf = str(lrf)
+    dataroot = dataroot + dataset_name + '_MIL'
+    CLS_dataroot = dataroot + dataset_name + '_CLS'
+
+    for model_idx in model_idxs:
+        if enable_tensorboard is True:
+            print('python MIL_train.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --edge_size ' + edge_size + ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --batch_size ' + batch_size + ' --patch_size ' + patch_size + ' --lr ' + lr + ' --lrf '
+                  + lrf + ' --enable_tensorboard --dataroot ' + dataroot + ' --model_path ' + model_path
+                  + ' --draw_root ' + draw_root)
+            print('')
+        else:
+            print('python MIL_train.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --edge_size ' + edge_size + ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --batch_size ' + batch_size + ' --patch_size ' + patch_size + ' --lr ' + lr + ' --lrf '
+                  + lrf + ' --dataroot ' + dataroot + ' --model_path ' + model_path + ' --draw_root ' + draw_root)
+            print('')
+
+    for model_idx in model_idxs:
+        print('python MIL_test.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+              + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+              '_MIL --edge_size ' + edge_size + ' --patch_size ' + patch_size +
+              ' --batch_size 1 --data_augmentation_mode ' + data_augmentation_mode + ' --dataroot ' +
+              dataroot + ' --model_path ' + model_path + ' --draw_root ' + draw_root)
+        print('')
+
+        if test_enable_attention_check is True:  # 设置多个batch的实验
+            print('python Test.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --edge_size ' + edge_size + ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --MIL_Stripe --enable_attention_check --check_minibatch 10' +
+                  ' --dataroot ' + CLS_dataroot + ' --model_path ' + model_path +
+                  ' --draw_root ' + imaging_root)
+            print('')
+            print('python MIL_test.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --shuffle_attention_check --MIL_Stripe --edge_size ' + edge_size +
+                  ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --shuffle_dataloader --batch_size 4 --check_minibatch 10' + ' --patch_size ' + patch_size +
+                  ' --dataroot ' + dataroot + ' --model_path ' + model_path +
+                  ' --draw_root ' + imaging_root)
+            print('')
+            print('python MIL_test.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --shuffle_attention_check --MIL_Stripe --edge_size ' + edge_size +
+                  ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --batch_size 4 --check_minibatch 10' + ' --patch_size ' + patch_size +
+                  ' --dataroot ' + dataroot + ' --model_path ' + model_path +
+                  ' --draw_root ' + imaging_root)
+            print('')
+            print('python MIL_test.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --shuffle_attention_check --MIL_Stripe --edge_size ' + edge_size +
+                  ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --batch_size 1 --check_minibatch 10' + ' --patch_size ' + patch_size +
+                  ' --dataroot ' + dataroot + ' --model_path ' + model_path +
+                  ' --draw_root ' + imaging_root)
+            print('')
+
+        else:
+            print('python Test.py --model_idx ' + model_idx + '_' + edge_size + '_' + lr_name
+                  + '_PT_lf' + lf_name + '_b' + batch_size + '_p' + patch_size + '_' + dataset_name +
+                  '_MIL --edge_size ' + edge_size + ' --data_augmentation_mode ' + data_augmentation_mode +
+                  ' --MIL_Stripe --dataroot ' + CLS_dataroot + ' --model_path ' + model_path +
+                  ' --draw_root ' + draw_root)
+            print('')
+
+
+'''
+if __name__ == '__main__':
+
+    print('#!/bin/sh')
+    print('')
+    # CLS-MIL调参的第一步是使用一个经验参数进行简单摸索，看看大家结果大概是多少，同时和文献进行对比
+    # 首先摸索CLS对比实验结果
+    model_idxs = ['ViT', 'vgg16', 'vgg19', 'mobilenetv3', 'inceptionv3', 'xception',
+                  'ResNet50', 'efficientnet_b3', 'swin_b', 'ResN50_ViT', 'conformer', 'cross_former']
+
+    batch_size = 8
+    dataset_name = 'NCT-CRC-HE-100K'
+
+    write_CLS_script(model_idxs=model_idxs,
+                     data_augmentation_mode=3,
+                     edge_size=384,
+                     batch_size=batch_size,
+                     lr=0.000007,
+                     lrf=0.35,
+                     enable_tensorboard=True,
+                     test_enable_attention_check=True,
+                     dataset_name=dataset_name,
+                     dataroot='/root/autodl-tmp/datasets/',
+                     model_path='/root/autodl-tmp/saved_models',
+                     draw_root='/root/autodl-tmp/runs')
+
+    # 正式实验的时候，后面还需要做各种MIL的消融实验
+    # TODO 更多write_MIL_script
+    # 其次摸索CLS+特定模型vit+不同数据增强 对比实验结果
+    augmentation_names = ['Cutout', 'Mixup', 'CutMix']
+    write_CLS_AUG_script(model_idx='ViT',
+                         augmentation_names=augmentation_names,
+                         data_augmentation_mode=3,
+                         edge_size=384,
+                         batch_size=batch_size,
+                         lr=0.000007,
+                         lrf=0.35,
+                         enable_tensorboard=True,
+                         test_enable_attention_check=True,
+                         dataset_name=dataset_name,
+                         dataroot='/root/autodl-tmp/datasets/',
+                         model_path='/root/autodl-tmp/saved_models',
+                         draw_root='/root/autodl-tmp/runs')
+
+    # 最后摸索MIL+ViT的实验结果
+    MIL_model_idxs = ['ViT', ]
+    # MIL ablations
+    write_MIL_script(model_idxs=MIL_model_idxs,
+                     data_augmentation_mode=3,
+                     edge_size=384,
+                     batch_size=batch_size,
+                     patch_size=16,
+                     lr=0.000007,
+                     lrf=0.35,
+                     enable_tensorboard=True,
+                     test_enable_attention_check=False,
+                     dataset_name=dataset_name,
+                     dataroot='/root/autodl-tmp/datasets/',
+                     model_path='/root/autodl-tmp/saved_models',
+                     draw_root='/root/autodl-tmp/runs',
+                     imaging_root='/root/autodl-tmp/imaging_results')
+    write_MIL_script(model_idxs=MIL_model_idxs,
+                     data_augmentation_mode=3,
+                     edge_size=384,
+                     batch_size=batch_size,
+                     patch_size=64,
+                     lr=0.000007,
+                     lrf=0.35,
+                     enable_tensorboard=True,
+                     test_enable_attention_check=False,
+                     dataset_name=dataset_name,
+                     dataroot='/root/autodl-tmp/datasets/',
+                     model_path='/root/autodl-tmp/saved_models',
+                     draw_root='/root/autodl-tmp/runs',
+                     imaging_root='/root/autodl-tmp/imaging_results')
+    write_MIL_script(model_idxs=MIL_model_idxs,
+                     data_augmentation_mode=3,
+                     edge_size=384,
+                     batch_size=batch_size,
+                     patch_size=48,
+                     lr=0.000007,
+                     lrf=0.35,
+                     enable_tensorboard=True,
+                     test_enable_attention_check=False,
+                     dataset_name=dataset_name,
+                     dataroot='/root/autodl-tmp/datasets/',
+                     model_path='/root/autodl-tmp/saved_models',
+                     draw_root='/root/autodl-tmp/runs',
+                     imaging_root='/root/autodl-tmp/imaging_results')
+    write_MIL_script(model_idxs=MIL_model_idxs,
+                     data_augmentation_mode=3,
+                     edge_size=384,
+                     batch_size=batch_size,
+                     patch_size=96,
+                     lr=0.000007,
+                     lrf=0.35,
+                     enable_tensorboard=True,
+                     test_enable_attention_check=False,
+                     dataset_name=dataset_name,
+                     dataroot='/root/autodl-tmp/datasets/',
+                     model_path='/root/autodl-tmp/saved_models',
+                     draw_root='/root/autodl-tmp/runs',
+                     imaging_root='/root/autodl-tmp/imaging_results')
+    write_MIL_script(model_idxs=MIL_model_idxs,
+                     data_augmentation_mode=3,
+                     edge_size=384,
+                     batch_size=batch_size,
+                     patch_size=128,
+                     lr=0.000007,
+                     lrf=0.35,
+                     enable_tensorboard=True,
+                     test_enable_attention_check=False,
+                     dataset_name=dataset_name,
+                     dataroot='/root/autodl-tmp/datasets/',
+                     model_path='/root/autodl-tmp/saved_models',
+                     draw_root='/root/autodl-tmp/runs',
+                     imaging_root='/root/autodl-tmp/imaging_results')
+
+    # 调参实验的时候，先调MIL到最好，然后用参数去跑CLS实验看结果
+
+    print('cd /home/pancreatic-cancer-diagnosis-tansformer/code/utils')
+    print('')
+    print(
+        'python check_log_json.py --enable_notify --draw_root /root/autodl-tmp/runs --record_dir /root/autodl-tmp/CSV_logs')
+    print('')
+    print('shutdown')
+'''
+
+
 def get_args_parser():
     parser = argparse.ArgumentParser(description='Automatically write shell script for training')
 
@@ -544,13 +758,13 @@ if __name__ == '__main__':
 
     print('#!/bin/sh')
     print('')
-    # add PuzzleTuning_SAE_ViT_to_VPT-CPIA
-    write_additional_PuzzleTuning_comparison_script(add_idx='PuzzleTuning_SAE_ViT-CPIA', lr_mystr=args.lr_mystr,
+    # add DropPos-CPIA
+    write_additional_PuzzleTuning_comparison_script(add_idx='DropPos-CPIA', lr_mystr=args.lr_mystr,
                                                     lrf_mystr=args.lrf_mystr,
                                                     data_augmentation_mode=args.data_augmentation_mode,
                                                     dataset_name=args.dataset_name,
-                                                    model_weight_idx='timm_PuzzleTuning_SAE_E_199',
-                                                    model_weight_name='ViT_b16_224_timm_PuzzleTuning_SAE_CPIAm_E_199.pth',
+                                                    model_weight_idx='timm_DropPos_CPIAm_E200',
+                                                    model_weight_name='ViT_b16_224_timm_DropPos_ALL_200.pth',
                                                     GPU_idx=args.GPU_idx, Prompt_input=False)
 
     '''
@@ -578,6 +792,24 @@ if __name__ == '__main__':
                                                     model_weight_idx='timm_GCMAE_CPIAm_E80',
                                                     model_weight_name='ViT_b16_224_timm_GCMAE_ALL_80.pth',
                                                     GPU_idx=args.GPU_idx, Prompt_input=False)
+    # add JIGSAW-CPIA
+    write_additional_PuzzleTuning_comparison_script(add_idx='JIGSAW-CPIA', lr_mystr=args.lr_mystr,
+                                                    lrf_mystr=args.lrf_mystr,
+                                                    data_augmentation_mode=args.data_augmentation_mode,
+                                                    dataset_name=args.dataset_name,
+                                                    model_weight_idx='timm_JIGSAW_CPIAm_E50',
+                                                    model_weight_name='ViT_b16_224_timm_JIGSAW_ALL_50.pth',
+                                                    GPU_idx=args.GPU_idx, Prompt_input=False)
+                                                    
+    # add DropPos-CPIA
+    write_additional_PuzzleTuning_comparison_script(add_idx='DropPos-CPIA', lr_mystr=args.lr_mystr,
+                                                    lrf_mystr=args.lrf_mystr,
+                                                    data_augmentation_mode=args.data_augmentation_mode,
+                                                    dataset_name=args.dataset_name,
+                                                    model_weight_idx='timm_DropPos_CPIAm_E200',
+                                                    model_weight_name='ViT_b16_224_timm_DropPos_ALL_200.pth',
+                                                    GPU_idx=args.GPU_idx, Prompt_input=False)
+                                                    
     # add MAE+VPT
     write_additional_PuzzleTuning_comparison_script(add_idx='MAE-VPT_promptstate',
                                                     lr_mystr=args.lr_mystr,
@@ -605,6 +837,15 @@ if __name__ == '__main__':
                                                     model_weight_idx='ViT_base_Random_PuzzleTuning_SAE_E_199_promptstate',
                                                     model_weight_name='ViT_b16_224_Random_PuzzleTuning_SAE_CPIAm_Prompt_Deep_tokennum_20_E_199_promptstate.pth',
                                                     GPU_idx='0', Prompt_input=True)
+                                                    
+    # add PuzzleTuning_SAE_ViT_to_VPT-CPIA
+    write_additional_PuzzleTuning_comparison_script(add_idx='PuzzleTuning_SAE_ViT-CPIA', lr_mystr=args.lr_mystr,
+                                                    lrf_mystr=args.lrf_mystr,
+                                                    data_augmentation_mode=args.data_augmentation_mode,
+                                                    dataset_name=args.dataset_name,
+                                                    model_weight_idx='timm_PuzzleTuning_SAE_E_199',
+                                                    model_weight_name='ViT_b16_224_timm_PuzzleTuning_SAE_CPIAm_E_199.pth',
+                                                    GPU_idx=args.GPU_idx, Prompt_input=False)
     '''
 
     # rewrite all
