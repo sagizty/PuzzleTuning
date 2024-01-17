@@ -171,7 +171,7 @@ def transfer_model_decoder(check_point_path, save_model_path,
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('MIM visualization for PuzzleTuning', add_help=False)
+    parser = argparse.ArgumentParser('Take pre-trained model from PuzzleTuning', add_help=False)
 
     # Model Name or index
     parser.add_argument('--given_name', default=None, type=str, help='name of the weight-state-dict')
@@ -278,6 +278,13 @@ def main(args):
     given_name = r'ViT_b16_224_Random_PuzzleTuning_SAE_CPIAm_Prompt_Deep_tokennum_20_E_199_promptstate.pth'
     transfer_model_encoder(checkpoint_path, save_model_path, model_idx='ViT', edge_size=224, prompt_mode='Deep',
                            Prompt_Token_num=20, given_name=given_name)
+                           
+    # 10 周期puzzle自动减小ratio，自动loop变化size 迁移Random，PromptTuning：None，seg_decoder：None  (4090*6服务器pt8)
+    # ViT_b16_224_MAEImageNet_PuzzleTuning_SAE_CPIAm_E_199.pth
+    checkpoint_path = '/root/autodl-tmp/runs/PuzzleTuning_SAE_vit_base_patch16_tr_MAEImageNet_CPIAm/PuzzleTuning_sae_vit_base_patch16_checkpoint-199.pth'
+    save_model_path = '/root/autodl-tmp/output_models'
+    given_name = r'ViT_b16_224_MAEImageNet_PuzzleTuning_SAE_CPIAm_E_199.pth'
+    transfer_model_encoder(checkpoint_path, save_model_path, model_idx='ViT', edge_size=224, given_name=given_name)
     """
 
     transfer_model_encoder(args.checkpoint_path, args.save_model_path,
