@@ -1,5 +1,5 @@
 """
-Training Engine   Script  ver： Oct 23rd 18:00
+Training Engine   Script  ver： Feb 8th 16:00
 
 Based on MAE code.
 https://github.com/facebookresearch/mae
@@ -12,7 +12,7 @@ from typing import Iterable
 import os
 import torch
 from torchvision.transforms import ToPILImage
-import utils.misc as misc
+import SSL_structures.misc as misc
 import utils.schedulers as lr_sched
 from utils.visual_usage import unpatchify, patchify, Draw_tri_fig
 
@@ -63,16 +63,17 @@ def train_one_epoch(model: torch.nn.Module,
             else:  # args.model[0:3] == 'mae'
                 loss, pred, mask_patch_indicators = model(samples, mask_ratio=args.mask_ratio)  # MAE
                 # fixme mae curriculum maybe not good enough for future
-
-        loss_value = float(loss.cpu().detach().numpy()) if args.gpu == 1 else sum(loss.cpu().detach().numpy())
-        # 这里有修改,原本MAE是 loss.items()
-        # print(loss_value)
+        if args.DDP_distributed:
+            loss_value = loss.item()
+        else:
+            loss_value = float(loss.cpu().detach().numpy()) \
+                if torch.cuda.device_count() == 1 else sum(loss.cpu().detach().numpy())
 
         if not math.isfinite(loss_value):  # 检查确保没有loss爆炸
             print("Loss is {}, stopping training".format(loss_value))
             sys.exit(1)
 
-        loss /= accum_iter  # 计算的是每个minibatch的loss，如果有梯度累加则需要减少占比，loss在loss_scaler里面会进行叠加
+        loss = loss / accum_iter  # 计算的是每个minibatch的loss，如果有梯度累加则需要减少占比，loss在loss_scaler里面会进行叠加
 
         # loss backward 核心（不要怕，其实就是功能上集成了loss.backward+opt.step，然后引入了梯度裁剪)
         loss_scaler(loss, optimizer, parameters=model.parameters(),
@@ -117,38 +118,40 @@ def train_one_epoch(model: torch.nn.Module,
                                                                         sample_img_patches.shape[-1])
         masked_img_batch = unpatchify(masked_img_patches, patch_size=16)
 
-    for sampleIDX in range(check_samples):
+    # paint images at the end of each epoch on main process
+    if misc.is_main_process():
+        for sampleIDX in range(check_samples):
 
-        sample_img = samples.cpu()[sampleIDX]
-        sample_img = ToPILImage()(sample_img)
-        sample_img.save(os.path.join(args.output_dir, 'figs', 'sample_e_' + str(epoch)
-                                     + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
-
-        recons_img_batch = unpatchify(pred, patch_size=16)
-        recons_img = recons_img_batch.cpu()[sampleIDX]
-        recons_img = ToPILImage()(recons_img)
-        recons_img.save(os.path.join(args.output_dir, 'figs', 'recons_e_' + str(epoch)
-                                     + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
-
-        if args.model[0:3] == 'sae':  # SAE
-            puzzled_img = imgs_puzzled_batch.cpu()[sampleIDX]
-            puzzled_img = ToPILImage()(puzzled_img)
-            puzzled_img.save(os.path.join(args.output_dir, 'figs', 'puzzled_e_' + str(epoch)
-                                          + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
-
-            picpath = os.path.join(args.output_dir, 'figs', 'puzzled_e_' + str(epoch)
-                                   + '_sampleIDX_' + str(sampleIDX) + '.jpg')
-            Draw_tri_fig(sample_img, puzzled_img, recons_img, picpath)
-
-        else:  # MAE
-            masked_img = masked_img_batch.cpu()[sampleIDX]  # put on CPU
-            masked_img = ToPILImage()(masked_img)
-            masked_img.save(os.path.join(args.output_dir, 'figs', 'masked_e_' + str(epoch)
+            sample_img = samples.cpu()[sampleIDX]
+            sample_img = ToPILImage()(sample_img)
+            sample_img.save(os.path.join(args.output_dir, 'figs', 'sample_e_' + str(epoch)
                                          + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
 
-            picpath = os.path.join(args.output_dir, 'figs', 'masked_e_' + str(epoch)
-                                   + '_sampleIDX_' + str(sampleIDX) + '.jpg')
-            Draw_tri_fig(sample_img, masked_img, recons_img, picpath)
+            recons_img_batch = unpatchify(pred, patch_size=16)
+            recons_img = recons_img_batch.cpu()[sampleIDX]
+            recons_img = ToPILImage()(recons_img)
+            recons_img.save(os.path.join(args.output_dir, 'figs', 'recons_e_' + str(epoch)
+                                         + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
+
+            if args.model[0:3] == 'sae':  # SAE
+                puzzled_img = imgs_puzzled_batch.cpu()[sampleIDX]
+                puzzled_img = ToPILImage()(puzzled_img)
+                puzzled_img.save(os.path.join(args.output_dir, 'figs', 'puzzled_e_' + str(epoch)
+                                              + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
+
+                picpath = os.path.join(args.output_dir, 'figs', 'puzzled_e_' + str(epoch)
+                                       + '_sampleIDX_' + str(sampleIDX) + '.jpg')
+                Draw_tri_fig(sample_img, puzzled_img, recons_img, picpath)
+
+            else:  # MAE
+                masked_img = masked_img_batch.cpu()[sampleIDX]  # put on CPU
+                masked_img = ToPILImage()(masked_img)
+                masked_img.save(os.path.join(args.output_dir, 'figs', 'masked_e_' + str(epoch)
+                                             + '_sampleIDX_' + str(sampleIDX) + '.jpg'))
+
+                picpath = os.path.join(args.output_dir, 'figs', 'masked_e_' + str(epoch)
+                                       + '_sampleIDX_' + str(sampleIDX) + '.jpg')
+                Draw_tri_fig(sample_img, masked_img, recons_img, picpath)
 
     # 返回记录，其他的已经在对象内迭代
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
