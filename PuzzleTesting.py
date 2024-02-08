@@ -1,5 +1,5 @@
 """
-Testing script of PuzzleTuning Visualization    Script  ver： Oct 24th 17:30
+Testing script of PuzzleTuning Visualization    Script  ver： Feb 8th 16:00
 
 Based on MAE code.
 https://github.com/facebookresearch/mae
@@ -191,7 +191,7 @@ def main(args):
         print("Use", torch.cuda.device_count(), "GPUs")
     args.gpu = torch.cuda.device_count()
 
-    print('job dir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
+    print('job AImageFolderDir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
     # 输出执行参数
     print("{}".format(args).replace(', ', ',\n'))
 
