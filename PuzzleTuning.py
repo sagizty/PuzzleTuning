@@ -1,31 +1,38 @@
 """
-Puzzle Tuning    Script  ver： Feb 8th 16:00
+Puzzle Tuning    Script  ver： Feb 11th 14:00
 
-Based on MAE code.
+Paper:
+https://arxiv.org/abs/2311.06712
+Code:
+https://github.com/sagizty/PuzzleTuning
+Ref: MAE
 https://github.com/facebookresearch/mae
 
-Step 1: PreTraining on the ImagetNet-1k
-Step 2: Domain Prompt Tuning on Pathological Images
+Step 1: PreTraining on the ImagetNet-1k style dataset (others)
+Step 2: Domain Prompt Tuning (PuzzleTuning) on Pathological Images (in ImageFolder)
 Step 3: FineTuning on the Downstream Tasks
 
-
-Use "--seg_decoder" parameter to introduce segmentation networks
-swin_unet for Swin-Unet
+This is the training code for step 2
 
 
-Experiments:
+Pre-training Experiments:
 DP (data-parallel bash)
 python PuzzleTuning.py --batch_size 64 --blr 1.5e-4 --epochs 200 --accum_iter 2 --print_freq 2000 --check_point_gap 50
 --input_size 224 --warmup_epochs 20 --pin_mem --num_workers 32 --strategy loop --PromptTuning Deep --basic_state_dict
-/home/pancreatic-cancer-diagnosis-tansformer/saved_models/ViT_b16_224_Imagenet.pth
---data_path /root/autodl-tmp/datasets/All
+/data/saved_models/ViT_b16_224_Imagenet.pth
+--data_path /root/datasets/All
 
-DDP (distributed data-parallel bash)
-python -m torch.distributed.launch --nproc_per_node=2 --nnodes 1 --node_rank 0 PuzzleTuning.py --DDP_distributed
+DDP (distributed data-parallel bash) for one machine with 12 GPU
+python -m torch.distributed.launch --nproc_per_node=12 --nnodes 1 --node_rank 0 PuzzleTuning.py --DDP_distributed
 --batch_size 64 --blr 1.5e-4 --epochs 200 --accum_iter 2 --print_freq 2000 --check_point_gap 50 --input_size 224
 --warmup_epochs 20 --pin_mem --num_workers 32 --strategy loop --PromptTuning Deep --basic_state_dict
-/home/pancreatic-cancer-diagnosis-tansformer/saved_models/ViT_b16_224_Imagenet.pth
---data_path /root/autodl-tmp/datasets/All
+/data/saved_models/ViT_b16_224_Imagenet.pth
+--data_path /root/datasets/All
+
+
+update:
+Use "--seg_decoder" parameter to introduce segmentation networks
+swin_unet for Swin-Unet
 """
 
 import argparse
@@ -55,11 +62,6 @@ from SSL_structures import models_mae, SAE
 
 from SSL_structures.engine_pretrain import train_one_epoch
 
-'''
-推荐脚本配置
-python DomainPromptTuning 
-'''
-
 
 def main(args):
     # choose encoder for timm
@@ -76,9 +78,8 @@ def main(args):
 
     # fix the seed for reproducibility
     if args.DDP_distributed:
-        # 设置多节点配置文件
         misc.init_distributed_mode(args)
-        seed = args.seed + misc.get_rank()  # 配置不同node的seed？
+        seed = args.seed + misc.get_rank()
     else:
         seed = args.seed
     torch.manual_seed(seed)
@@ -102,9 +103,9 @@ def main(args):
     dataset_train = datasets.ImageFolder(os.path.join(args.data_path), transform=transform_train)  # , 'train'
     print('dataset_train:', dataset_train)  # Train data
 
-    if args.DDP_distributed:  # args.DDP_distributed 原本是默认if True，原本这个脚本设计的是适配DDP和DP
-        num_tasks = misc.get_world_size()  # 自动识别节点数量
-        global_rank = misc.get_rank()  # 自动识别gpu节点该gpu的id
+    if args.DDP_distributed:  # args.DDP_distributed is True we use distributed data parallel(DDP)
+        num_tasks = misc.get_world_size()  # use misc to set up DDP
+        global_rank = misc.get_rank()  # get the rank of the current running
 
         sampler_train = torch.utils.data.DistributedSampler(
             dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True)
@@ -112,7 +113,7 @@ def main(args):
         enable_DistributedSampler = True
         batch_size_for_Dataloader = args.batch_size
 
-    else:  # 采用单机DP的非分布式训练
+    else:  # Data parallel(DP) instead of distributed data parallel(DDP)
         global_rank = 0
         sampler_train = torch.utils.data.RandomSampler(dataset_train)
         enable_DistributedSampler = False
@@ -142,10 +143,10 @@ def main(args):
         raise
 
     data_loader_train = torch.utils.data.DataLoader(
-        dataset_train, sampler=sampler_train,  # 通过设置sampler，而不再需要shuffle=True
+        dataset_train, sampler=sampler_train,  # the shuffle=True is already set in the sampler
         batch_size=batch_size_for_Dataloader,
         num_workers=args.num_workers,
-        pin_memory=args.pin_mem,  # 建议False
+        pin_memory=args.pin_mem,
         drop_last=True)
 
     # define the model
@@ -246,13 +247,13 @@ def main(args):
                                                       basic_patch=model.patch_embed.patch_size[0],
                                                       fix_patch_size=args.fix_patch_size,  # None
                                                       strategy=args.strategy)  # 'linear'
-        # Fixme NOTICE strategy=None for fix patch size of 32, strategy=linear is also a good option
+        # NOTICE strategy are used for setting up both the ratio-scheduler and patch-scheduler
 
     else:
         print('This Tuning script only support SAE(PuzzleTuning) or MAE')
         return -1
 
-    # 总的等价batch size， 用这个来配置lr
+    # the effective batch size for setting up lr
     if args.DDP_distributed:
         eff_batch_size = args.batch_size * args.accum_iter * misc.get_world_size()
     else:
@@ -268,12 +269,12 @@ def main(args):
     print("accumulate grad iterations: %d" % args.accum_iter)
     print("effective batch size: %d" % eff_batch_size)
 
-    # 为了优化分布式训练的参数，按照in-place把参数拿出来，后续模型虽然是分布式的，但是拿到梯度后，其参数被in-place优化
+    # take the model parameters for optimizer update
     model_without_ddp = model
 
-    if args.DDP_distributed:  # 单机多卡DP调用而不再用DDP
-        # fixme find_unused_parameters=True ? False?
+    if args.DDP_distributed:
         model.cuda()  # args.gpu is obtained by misc.py
+        # find_unused_parameters=True for the DDP to correctly synchronize layers in back propagation
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
     else:
         model = torch.nn.DataParallel(model)
@@ -286,11 +287,11 @@ def main(args):
     optimizer = torch.optim.AdamW(param_groups, lr=args.lr, betas=(0.9, 0.95))
     print(optimizer)
 
-    # loss 反传迭代器
+    # loss scaler with gradient clipping
     loss_scaler = NativeScaler(GPU_count=torch.cuda.device_count(), DDP_distributed=args.DDP_distributed)
 
-    # 如果有--resume，自动加载跑好的checkpoint继续训练，包括model，optimizer, loss_scaler
-    # 没有则自动跳过
+    # if we have --resume，we will load the checkpoint and continue training, if not, we start a new training
+    # the checkpoint should include model, optimizer, loss_scaler information
     misc.load_model(args=args, model_without_ddp=model_without_ddp, optimizer=optimizer, loss_scaler=loss_scaler)
 
     # Training by epochs
@@ -343,10 +344,12 @@ def get_args_parser():
     parser.add_argument('--batch_size', default=64, type=int,
                         help='Batch size per GPU (effective batch size is batch_size * accum_iter * # gpus')
     parser.add_argument('--epochs', default=200, type=int)  # epochs原800
-    parser.add_argument('--accum_iter', default=2, type=int,  # 通过梯度累积的方法来模拟大batch size
-                        help='Accumulate gradient iterations (for increasing the effective batch size under memory constraints)')
+    parser.add_argument('--accum_iter', default=2, type=int,
+                        help='Accumulate gradient iterations '
+                             '(for increasing the effective batch size under memory constraints)')
 
-    # 如果有--resume，自动加载跑好的checkpoint继续训练，包括model，optimizer, loss_scaler 没有则自动跳过
+    # if we have --resume，we will load the checkpoint and continue training, if not, we start a new training
+    # the checkpoint should include model, optimizer, loss_scaler information
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch of checkpoint')
 
@@ -356,9 +359,8 @@ def get_args_parser():
     parser.add_argument('--seg_decoder', default=None, type=str, metavar='segmentation decoder',
                         help='Name of segmentation decoder')
 
-    parser.add_argument('--input_size', default=224, type=int,  # 原224
-                        help='images input size')
-    parser.add_argument('--model_patch_size', default=16, type=int,  # 原224
+    parser.add_argument('--input_size', default=224, type=int,help='images input size')
+    parser.add_argument('--model_patch_size', default=16, type=int,
                         help='model_patch_size, default 16 for ViT-base')
     parser.add_argument('--num_classes', default=3, type=int,  # decoder seg class set to channel
                         help='the number of classes for segmentation')
@@ -403,8 +405,8 @@ def get_args_parser():
     parser.add_argument('--min_lr', type=float, default=0., metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0')
 
-    parser.add_argument('--warmup_epochs', type=int, default=20, metavar='N',  # 原40
-                        help='epochs to warmup LR')  # 代码考虑了checkpoint，如果是小于start epoch，则自动不做warmup
+    parser.add_argument('--warmup_epochs', type=int, default=20, metavar='N',
+                        help='epochs to warmup LR')
 
     # PATH settings
     # Dataset parameters  /datasets01/imagenet_full_size/061417/  /data/imagenet_1k   /root/autodl-tmp/imagenet
@@ -415,10 +417,10 @@ def get_args_parser():
                         help='path where to tensorboard log')
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
-    parser.add_argument('--seed', default=42, type=int)  # ori 0 不过应该无所谓？
+    parser.add_argument('--seed', default=42, type=int)
 
     # dataloader setting
-    parser.add_argument('--num_workers', default=20, type=int)  # Ori 10，
+    parser.add_argument('--num_workers', default=20, type=int)
     # 4A100（16，384，b128, shm40）6A100(36，384，b128, shm100) 8A100(35，384，b128, shm100)
     parser.add_argument('--pin_mem', action='store_true',
                         help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')

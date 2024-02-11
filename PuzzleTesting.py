@@ -1,21 +1,23 @@
 """
-Testing script of PuzzleTuning Visualization    Script  ver： Feb 8th 16:00
+Testing script of PuzzleTuning Visualization    Script  ver： Feb 11th 14:00
 
-Based on MAE code.
+Paper:
+https://arxiv.org/abs/2311.06712
+Code:
+https://github.com/sagizty/PuzzleTuning
+Ref: MAE
 https://github.com/facebookresearch/mae
 
-Step 1: PreTraining on the ImagetNet-1k
-Step 2: Domain Prompt Tuning on Pathological Images
+Step 1: PreTraining on the ImagetNet-1k style dataset (others)
+Step 2: Domain Prompt Tuning (PuzzleTuning) on Pathological Images (in ImageFolder)
 Step 3: FineTuning on the Downstream Tasks
 
+This is the independent testing for step 2
+
+
+update:
 Use "--seg_decoder" parameter to introduce segmentation networks
 swin_unet for Swin-Unet
-
-
-Experiments:
-
-1. Patch_camelyon 320000 pic, epoch200, edge 224
-
 """
 
 import argparse
@@ -53,7 +55,6 @@ def Puzzle_test(model, data_loader_test, test_dataset_size, mask_ratio, fix_posi
     running_loss = 0.0
     log_running_loss = 0.0
 
-    # 循环 Test
     model.eval()
 
     # Iterate over data.
@@ -184,7 +185,7 @@ def main(args):
     print('\n\n' + args.model_idx + '\n\n')
 
     # setting k for: only card idx k is sighted for this code
-    if args.gpu_idx != -1:
+    if args.gpu_idx != -1:  # fixme: notice for test, we are going to use single gpu only
         print("Use", torch.cuda.device_count(), "GPUs of idx:", args.gpu_idx)
         os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu_idx)
     else:
@@ -192,7 +193,6 @@ def main(args):
     args.gpu = torch.cuda.device_count()
 
     print('job AImageFolderDir: {}'.format(os.path.dirname(os.path.realpath(__file__))))
-    # 输出执行参数
     print("{}".format(args).replace(', ', ',\n'))
 
     device = torch.device(args.device)  # cuda
@@ -201,7 +201,6 @@ def main(args):
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    # 调用硬件加速，增加程序的运行效率
     cudnn.benchmark = True
 
     # simple augmentation
@@ -209,7 +208,7 @@ def main(args):
         # transforms.RandomResizedCrop(args.input_size, scale=(0.8, 1.0), interpolation=3, ratio=(1. / 1., 1. / 1.)),
         # 3 is bicubic
         transforms.Resize(args.input_size),
-        transforms.ToTensor(),  # Fixme Normalize?
+        transforms.ToTensor(),
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
@@ -342,8 +341,7 @@ def get_args_parser():
     # checkpoint_state_dict_path
     parser.add_argument('--checkpoint_path',
                         default='/root/autodl-tmp/runs/PuzzleTuning_SAE_vit_base_patch16_Prompt_Deep_tokennum_20_tr_timm_CPIAm/PuzzleTuning_sae_vit_base_patch16_Prompt_Deep_tokennum_20_checkpoint-199.pth',
-                        type=str,
-                        help='load state_dict for testing')
+                        type=str, help='load state_dict for testing')
 
     # check settings
     parser.add_argument('--combined_pred_illustration', action='store_true', help='check combined_pred_illustration pics')
@@ -352,8 +350,7 @@ def get_args_parser():
     parser.add_argument('--check_samples', default=1, type=int, help='check how many images in a checking batch')
 
     # dataloader setting
-    parser.add_argument('--num_workers', default=10, type=int)  # Ori 10，
-    # 4A100（16，384，b128, shm40）6A100(36，384，b128, shm100) 8A100(35，384，b128, shm100)
+    parser.add_argument('--num_workers', default=10, type=int)
     parser.add_argument('--pin_mem', action='store_true',
                         help='Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.')
     parser.add_argument('--no_pin_mem', action='store_false', dest='pin_mem')
