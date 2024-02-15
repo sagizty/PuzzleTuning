@@ -1,8 +1,11 @@
 """
-Schedulers   Script  ver： May 19th 12:00
+Schedulers   Script  ver： Feb 15th 17:00
+
+puzzle_patch_scheduler is used to arrange patch size for multi-scale learning
+
+ref
 lr_scheduler from MAE code.
 https://github.com/facebookresearch/mae
-puzzle_patch_scheduler is used to arrange patch size for multi-scale learning
 """
 
 import math
@@ -63,7 +66,7 @@ class patch_scheduler:
     """
 
     def __init__(self, total_epoches=200, warmup_epochs=20, edge_size=384, basic_patch=16, strategy=None,
-                 threshold=4.0, reducing_factor=0.933, fix_patch_size=None, patch_size_jump=None):
+                 threshold=3.0, reducing_factor=0.933, fix_patch_size=None, patch_size_jump=None):
         super().__init__()
 
         self.strategy = strategy
@@ -71,7 +74,7 @@ class patch_scheduler:
         self.total_epoches = total_epoches
         self.warmup_epochs = warmup_epochs
 
-        # automaticly build legal patch list, from small to big size
+        # automatically build legal patch list, from small to big size
         self.patch_list = defactor(factor(edge_size), basic_patch)
 
         self.threshold = threshold
@@ -92,7 +95,7 @@ class patch_scheduler:
             temp_list = [self.patch_list[0]]
             temp_list.extend(jump_patch_list)
             self.patch_list = temp_list
-        else:
+        else:  # all
             pass
 
         if self.strategy in ['reverse', 'loss_back', 'loss_hold']:  # start from big(easy) to samll(complex)
@@ -118,7 +121,7 @@ class patch_scheduler:
 
         elif self.strategy == 'loop':
             # looply change the patch size, after [group_size] epoches we change once
-            group_size = 3
+            group_size = int(self.threshold)
 
             if epoch < self.warmup_epochs:
                 puzzle_patch_size = 32  # in warm up epoches, fixed patch size at 32 fixme exploring
@@ -176,14 +179,6 @@ class patch_scheduler:
             puzzle_patch_size = self.fix_patch_size or self.patch_list[0]  # basic_patch
 
         return puzzle_patch_size
-
-
-'''
-scheduler = puzzle_patch_scheduler(strategy='reverse')
-epoch = 182
-puzzle_patch_size = scheduler(epoch)
-print(puzzle_patch_size)
-'''
 
 
 class ratio_scheduler:
