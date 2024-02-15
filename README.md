@@ -10,15 +10,21 @@ Overview of PuzzleTuning. Three steps are designed: In step 1 of the puzzle maki
 
 
 # Usage
-## weights
+## pre-trained weights
 we have updated the pre-trained weight of PuzzleTuning and all counterparts at
 
 https://drive.google.com/file/d/1-mddejIdCRP5AscnlWAyEcGzfgBIRCSf/view?usp=share_link
 
-## demo
+## demo with Colab
 we have updated a demo for iullustration at 
 
 https://github.com/sagizty/PuzzleTuning/blob/main/PuzzleTuning%20Colab%20Demo.ipynb
+
+## training script
+python -m torch.distributed.launch --nproc_per_node=8 --nnodes 1 --node_rank 0 PuzzleTuning.py --DDP_distributed --batch_size 64 --group_shuffle_size 8 --blr 1.5e-4 --epochs 2000 --accum_iter 2 --print_freq 5000 --check_point_gap 100 --input_size 224 --warmup_epochs 100 --pin_mem --num_workers 32 --strategy loop --PromptTuning Deep --basic_state_dict /home/saved_models/ViT_b16_224_Imagenet.pth --data_path /home/datasets/All
+
+## CPIA dataset
+https://github.com/zhanglab2021/CPIA_Dataset
 
 # Results
 ## Comparison
