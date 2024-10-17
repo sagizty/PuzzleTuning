@@ -1,12 +1,12 @@
 """
-build_promptmodel   Script  ver： Oct 17th 02:00
+build_promptmodel   Script  ver： Oct 17th 14:20
 
 """
 
 try:
-    from VPT_structure import *
+    from Backbone.VPT_structure import *
 except:
-    from .VPT_structure import *
+    from Backbone.VPT_structure import *
 
 
 def build_promptmodel(num_classes=1000, edge_size=224, model_idx='ViT', patch_size=16,
@@ -84,4 +84,4 @@ def build_promptmodel(num_classes=1000, edge_size=224, model_idx='ViT', patch_si
 
 
 if __name__ == '__main__':
-    model = build_promptmodel(prompt_state_dict=None, base_state_dict='timm',num_classes=0)
+    model = build_promptmodel(prompt_state_dict=None, base_state_dict='timm', num_classes=0)
