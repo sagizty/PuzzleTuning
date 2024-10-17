@@ -1,17 +1,30 @@
 """
-build_promptmodel   Script  ver： Aug 31th 15:20
+build_promptmodel   Script  ver： Oct 17th 02:00
 
 """
 
 try:
-    from Backbone.VPT_structure import *
+    from VPT_structure import *
 except:
-    from Backbone.VPT_structure import *
+    from .VPT_structure import *
 
 
 def build_promptmodel(num_classes=1000, edge_size=224, model_idx='ViT', patch_size=16,
                       Prompt_Token_num=20, VPT_type="Deep", prompt_state_dict=None, base_state_dict='timm'):
-    # VPT_type = "Deep" / "Shallow"
+    """
+    following the https://github.com/sagizty/VPT
+    this build the VPT (prompt version of ViT), with additional prompt tokens,
+    each layer the information become [B, N_patch + N_prompt, Dim]
+
+    During training only the prompt tokens and the head layer are
+    set to be learnable while the rest of Transformer layers are frozen
+
+    # VPT_type = "Shallow" / "Deep"
+        - Shallow: concatenate N_prompt of prompt tokens before the first Transformer Encoder block,
+                each layer the information become [B, N_patch + N_prompt, Dim]
+        - Deep: concatenate N_prompt of prompt tokens to each Transformer Encoder block,
+                this will replace the output prompt tokens learnt form previous encoder.
+    """
 
     if model_idx[0:3] == 'ViT':
 
@@ -60,8 +73,7 @@ def build_promptmodel(num_classes=1000, edge_size=224, model_idx='ViT', patch_si
     try:
         img = torch.randn(1, 3, edge_size, edge_size)
         preds = model(img)  # (1, class_number)
-        # print('test model output：', preds)
-        print('model forward cheacked')
+        print('Build VPT model with in/out shape: ', img.shape, ' -> ', preds.shape)
 
     except:
         print("Problem exist in the model defining process！！")
@@ -72,9 +84,4 @@ def build_promptmodel(num_classes=1000, edge_size=224, model_idx='ViT', patch_si
 
 
 if __name__ == '__main__':
-    base_state_dict = torch.load(
-        '/root/autodl-tmp/output_models/PuzzleTuning_sae_vit_base_patch16_decoder_transunet_checkpoint-399_of_ViT_E_399_transfer.pth')
-    prompt_state_dict = torch.load(
-        '/root/autodl-tmp/output_models/PuzzleTuning_sae_vit_base_patch16_decoder_swin_unet_Prompt_Deep_tokennum_20_checkpoint-60_of_ViT_E_60_promptstate.pth')
-
-    model = build_promptmodel(prompt_state_dict=prompt_state_dict, base_state_dict=base_state_dict)
+    model = build_promptmodel(prompt_state_dict=None, base_state_dict='timm',num_classes=0)
