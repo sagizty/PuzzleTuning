@@ -1,5 +1,5 @@
 """
-VPT     Script  ver： Jun 19th 14:20
+VPT     Script  ver： Oct 17th 14:30
 
 based on
 timm: https://github.com/rwightman/pytorch-image-models/tree/master/timm
@@ -35,7 +35,10 @@ class VPT_ViT(VisionTransformer):
             self.Prompt_Tokens = nn.Parameter(torch.zeros(1, Prompt_Token_num, embed_dim))
 
     def New_CLS_head(self, new_classes=15):
-        self.head = nn.Linear(self.embed_dim, new_classes)
+        if new_classes != 0:
+            self.head = nn.Linear(self.embed_dim, new_classes)
+        else:
+            self.head = nn.Identity()
 
     def Freeze(self):
         for param in self.parameters():
