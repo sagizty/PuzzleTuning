@@ -11,6 +11,32 @@ Overview of PuzzleTuning. Three steps are designed in PuzzleTuning: 1) Puzzle ma
 
 
 # Usage
+## load pretrained PuzzleTuning-VPT model with Huggingface
+```Python
+from huggingface_hub import hf_hub_download
+import torch
+from PuzzleTuning.Backbone.GetPromptModel import build_promptmodel
+
+# Define the repo ID
+repo_id = "Tianyinus/PuzzleTuning_VPT"
+
+# Download the base state dictionary file
+base_state_dict_path = hf_hub_download(repo_id=repo_id, filename="PuzzleTuning/Archive/ViT_b16_224_Imagenet.pth")
+
+# Download the prompt state dictionary file
+prompt_state_dict_path = hf_hub_download(repo_id=repo_id,
+                                         filename="PuzzleTuning/Archive/ViT_b16_224_timm_PuzzleTuning_SAE_CPIAm_Prompt_Deep_tokennum_20_E_199_promptstate.pth")
+
+# Load these weights into your model
+base_state_dict = torch.load(base_state_dict_path)
+prompt_state_dict = torch.load(prompt_state_dict_path)
+
+# Build your model using the loaded state dictionaries
+model = build_promptmodel(prompt_state_dict=prompt_state_dict,
+                          base_state_dict=base_state_dict,
+                          num_classes=0)
+```
+
 ## pre-trained weights
 we have updated the pre-trained weight of PuzzleTuning and all counterparts at
 
