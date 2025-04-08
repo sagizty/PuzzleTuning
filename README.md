@@ -97,6 +97,7 @@ For more details, please refer to our colab demo [here](./PuzzleTuning%20Colab%2
 
 ## Results
 
+### ROI Classification
 The table below reports the average top-5 accuracy and F1-score (%) of PuzzleTuning and state-of-the-art (SOTA) pre-training methods on four downstream classification datasets: CAM16, pRCC, ROSE, and WBC. P-values from paired t-tests validate the statistical significance of performance differences on F1-scores.
 
 | Method              | CAM16 Acc | CAM16 F1 | CAM16 P-val | pRCC Acc | pRCC F1 | pRCC P-val | ROSE Acc | ROSE F1 | ROSE P-val | WBC Acc | WBC F1 | WBC P-val |
@@ -115,6 +116,7 @@ The table below reports the average top-5 accuracy and F1-score (%) of PuzzleTun
 | BeyondMask          | 92.41     | 92.40    | 4.95E-05    | 86.22    | 84.96   | 1.02E-06    | 87.46    | 85.97   | 2.33E-06    | 96.34   | 94.07  | 1.71E-07    |
 | **PuzzleTuning**    | **95.83** | **95.83**| **-**       | **93.92**| **93.54**| **-**       | **93.27**| **92.52**| **-**       | **98.49**| **97.36**| **-**       |
 
+### Segmentation (WSSS)
 Below is the results of pre-trained weights on the CellViT and CellVPT for WSSS nuclei segmentation, where ViT/VPT denote different backbone models and pt/ft denote updating the prompt tokens or updating all the parameters in downstream training.
 
 | **Initialization** | **ViT+ft DICE** | **ViT+ft Jacard** | **ViT+pt DICE** | **ViT+pt Jacard** | **VPT+ft DICE** | **VPT+ft Jacard** | **VPT+pt DICE** | **VPT+pt Jacard** |
@@ -133,6 +135,7 @@ Below is the results of pre-trained weights on the CellViT and CellVPT for WSSS 
 | BeyondMask         | 79.56           | 71.46             | 76.25           | 66.10             | 74.34            | 63.52              | 76.29            | 66.07              |
 | **PuzzleTuning**   | **79.80**       | **71.98**         | **80.05**       | **72.43**         | **79.80**        | **71.96**          | **79.97**        | **72.18**          |
 
+### WSI Classification
 We also evaluate the accuracy of the PuzzleTuning pre-trained model in whole slide image (WSI) slide-level classification across two key downstream settings.
 
 | **Initialization**      | **ViT (Feat. Extract)** | **VPT (Feat. Extract)** | **ViT+ft** | **ViT+pt** | **VPT+ft** | **VPT+pt** |
