@@ -1,4 +1,4 @@
-# PuzzleTuning: Explicitly Bridge Pathological and Natural Image with Puzzles
+# PuzzleTuning: Bridging Pathological and Natural Image with Puzzles
 
 [[`arXiv`](https://arxiv.org/abs/2311.06712)] [[`Vidio Presentation`](https://www.bilibili.com/video/BV1ZVHje9EdX)]
 
