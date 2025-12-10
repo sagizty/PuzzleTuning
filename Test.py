@@ -1,5 +1,5 @@
 """
-Testing  Script  ver： Oct 23rd 17:30
+Testing  Script  ver： Dec 10th 09:00
 """
 
 from __future__ import print_function, division
@@ -360,32 +360,17 @@ def main(args):
             print("model loading erro!!")
             return -1
 
+    device_idx = 'cuda'
     if gpu_idx == -1:
         if torch.cuda.device_count() > 1:
             print("Use", torch.cuda.device_count(), "GPUs!")
             # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
             model = nn.DataParallel(model)
-        else:
-            print('we dont have more GPU idx here, try to use gpu_idx=0')
-            try:
-                # setting 0 for: only card idx 0 is sighted for this code
-                os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-            except:
-                print("GPU distributing ERRO occur use CPU instead")
-
     else:
-        # Decide which device we want to run on
-        try:
-            # setting k for: only card idx k is sighted for this code
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_idx)
-        except:
-            print('we dont have that GPU idx here, try to use gpu_idx=0')
-            try:
-                # setting 0 for: only card idx 0 is sighted for this code
-                os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-            except:
-                print("GPU distributing ERRO occur use CPU instead")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # single card for test
+        device_idx = "cuda:" + str(gpu_idx).strip()
+    # Use single card for test
+    device = torch.device(device_idx if torch.cuda.is_available() else "cpu")
+    print(f"device: {device}")
 
     model.to(device)
 
